@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <defs>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6d28d9;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="grid2" width="50" height="50" patternUnits="userSpaceOnUse">
+      <circle cx="25" cy="25" r="8" fill="white" opacity="0.2" />
+    </pattern>
+  </defs>
+  <rect width="600" height="400" fill="url(#g2)" />
+  <rect width="600" height="400" fill="url(#grid2)" />
+  <!-- Иконка исследования -->
+  <g transform="translate(200, 100)" fill="white" opacity="0.8">
+    <path d="M100,20 L180,60 L100,100 L20,60 Z" />
+    <circle cx="100" cy="60" r="15" fill="#8b5cf6" />
+    <circle cx="60" cy="40" r="8" fill="white" />
+    <circle cx="140" cy="80" r="8" fill="white" />
+    <circle cx="80" cy="90" r="8" fill="white" />
+  </g>
+  <text x="300" y="280" text-anchor="middle" fill="white" font-family="Arial" font-size="24" font-weight="bold">
+    Исследование
+  </text>
+</svg>

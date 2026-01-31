@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="400" viewBox="0 0 1920 400">
+  <defs>
+    <linearGradient id="grassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#166534;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#15803d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14532d;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dirtGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#92400e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#78350f;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Земля -->
+  <rect y="350" width="1920" height="50" fill="url(#dirtGradient)" />
+
+  <!-- Трава -->
+  <rect y="250" width="1920" height="100" fill="url(#grassGradient)" />
+
+  <!-- Травинки -->
+  <g fill="#22c55e" opacity="0.7">
+    <path d="M100,350 Q120,280 140,350 Z" />
+    <path d="M200,350 Q220,290 240,350 Z" />
+    <path d="M300,350 Q320,270 340,350 Z" />
+    <path d="M400,350 Q420,300 440,350 Z" />
+    <path d="M500,350 Q520,260 540,350 Z" />
+    <path d="M600,350 Q620,310 640,350 Z" />
+    <path d="M700,350 Q720,280 740,350 Z" />
+    <path d="M800,350 Q820,290 840,350 Z" />
+    <path d="M900,350 Q920,270 940,350 Z" />
+    <path d="M1000,350 Q1020,300 1040,350 Z" />
+    <path d="M1100,350 Q1120,260 1140,350 Z" />
+    <path d="M1200,350 Q1220,310 1240,350 Z" />
+    <path d="M1300,350 Q1320,280 1340,350 Z" />
+    <path d="M1400,350 Q1420,290 1440,350 Z" />
+    <path d="M1500,350 Q1520,270 1540,350 Z" />
+    <path d="M1600,350 Q1620,300 1640,350 Z" />
+    <path d="M1700,350 Q1720,260 1740,350 Z" />
+    <path d="M1800,350 Q1820,310 1840,350 Z" />
+  </g>
+
+  <!-- Цветочки -->
+  <g opacity="0.8">
+    <circle cx="150" cy="320" r="6" fill="#f472b6" />
+    <circle cx="450" cy="310" r="5" fill="#fbbf24" />
+    <circle cx="750" cy="315" r="7" fill="#8b5cf6" />
+    <circle cx="1050" cy="305" r="6" fill="#3b82f6" />
+    <circle cx="1350" cy="320" r="5" fill="#10b981" />
+    <circle cx="1650" cy="310" r="7" fill="#ef4444" />
+  </g>
+</svg>
