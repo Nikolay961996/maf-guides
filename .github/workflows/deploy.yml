@@ -59,7 +59,15 @@ jobs:
         echo "Checking if rsync is available on server..."
         if ! ssh $SSH_OPTIONS $TARGET "which rsync"; then
           echo "rsync not found on server, installing..."
-          ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y rsync"
+
+          # Check if sudo is available
+          if ssh $SSH_OPTIONS $TARGET "which sudo"; then
+            echo "Using sudo for package installation..."
+            ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y rsync"
+          else
+            echo "sudo not found, trying apt-get without sudo (assuming root)..."
+            ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y rsync"
+          fi
         else
           echo "rsync is already installed on server"
         fi
