@@ -48,6 +48,12 @@ sudo chown -R $USER:$USER /var/www/html
 sudo chmod -R 755 /var/www/html
 ```
 
+### 1.5 Install rsync (required for deployment):
+```bash
+sudo apt update
+sudo apt install rsync -y
+```
+
 ### 2. Install and configure Nginx:
 ```bash
 sudo apt update
@@ -109,6 +115,14 @@ Check Nginx error logs:
 ```bash
 ssh user@45.135.233.197 "sudo tail -f /var/log/nginx/error.log"
 ```
+
+### Rsync errors
+If you see "rsync: command not found" errors:
+1. Ensure rsync is installed on the server:
+```bash
+ssh user@45.135.233.197 "sudo apt update && sudo apt install rsync -y"
+```
+2. The GitHub Actions workflow will attempt to install rsync automatically if missing, but manual installation ensures reliability.
 
 ### GitHub Actions logs
 Check the workflow run logs in GitHub repository → Actions tab.
