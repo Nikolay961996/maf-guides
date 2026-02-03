@@ -48,6 +48,30 @@ jobs:
         mkdir -p ~/.ssh
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
+
         PORT=${SSH_PORT:-22}
-        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -p $PORT -i ~/.ssh/deploy_key" dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/
+        SSH_OPTIONS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -p $PORT -i ~/.ssh/deploy_key"
+        TARGET="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+
+        echo "Testing SSH connection..."
+        ssh $SSH_OPTIONS $TARGET "echo 'SSH connection successful'"
+
+        echo "Checking if rsync is available on server..."
+        if ! ssh $SSH_OPTIONS $TARGET "which rsync"; then
+          echo "rsync not found on server, installing..."
+          ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y rsync"
+        else
+          echo "rsync is already installed on server"
+        fi
+
+        echo "Checking target directory permissions..."
+        ssh $SSH_OPTIONS $TARGET "ls -ld /var/www/html || echo 'Directory does not exist'"
+
+        echo "Starting deployment with rsync..."
+        rsync -avz --delete -e "ssh $SSH_OPTIONS" dist/ $TARGET:/var/www/html/
+
+        echo "Verifying deployed files..."
+        ssh $SSH_OPTIONS $TARGET "ls -la /var/www/html/ | head -10"
+
         rm -f ~/.ssh/deploy_key
+        echo "Deployment completed successfully!"
