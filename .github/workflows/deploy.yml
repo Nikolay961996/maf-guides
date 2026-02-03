@@ -68,6 +68,15 @@ jobs:
             echo "sudo not found, trying apt-get without sudo (assuming root)..."
             ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y rsync"
           fi
+
+          # Verify rsync was installed
+          if ssh $SSH_OPTIONS $TARGET "which rsync"; then
+            echo "rsync installed successfully"
+            ssh $SSH_OPTIONS $TARGET "rsync --version | head -1"
+          else
+            echo "ERROR: Failed to install rsync"
+            exit 1
+          fi
         else
           echo "rsync is already installed on server"
         fi
