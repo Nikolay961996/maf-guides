@@ -34,6 +34,12 @@ jobs:
     - name: Verify build output
       run: ls -la dist/
 
+    - name: Install rsync
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rsync
+        rsync --version
+
     - name: Deploy via rsync
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
