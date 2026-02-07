@@ -22,6 +22,8 @@ export const sendToYandexMetrika = (event: string, params?: Record<string, any>)
   if (typeof window === 'undefined' || !window.ym) return;
   try {
     window.ym(106551842, event, params);
+    if (event === 'analytics_data_collected')
+      window.ym(106551842,'reachGoal', event, params)
   } catch (error) {
     console.error('Failed to send event to Yandex Metrika:', error);
   }
