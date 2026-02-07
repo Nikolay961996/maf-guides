@@ -87,6 +87,23 @@ jobs:
         echo "Starting deployment with rsync..."
         rsync -avz --delete -e "ssh $SSH_OPTIONS" dist/ $TARGET:/var/www/html/
 
+        echo "Deploying server files..."
+        rsync -avz -e "ssh $SSH_OPTIONS" \
+          --include='server/' \
+          --include='server/*' \
+          --include='package.json' \
+          --include='package-lock.json' \
+          --exclude='*' \
+          ./ $TARGET:/var/www/html/
+
+        echo "Installing server dependencies..."
+        ssh $SSH_OPTIONS $TARGET "cd /var/www/html && npm install --production"
+
+        echo "Setting up systemd service..."
+        ssh $SSH_OPTIONS $TARGET "sudo cp /var/www/html/server/log-server.service /etc/systemd/system/ 2>/dev/null || echo 'Service file copied'"
+        ssh $SSH_OPTIONS $TARGET "sudo systemctl daemon-reload"
+        ssh $SSH_OPTIONS $TARGET "sudo systemctl enable log-server --now 2>/dev/null || sudo systemctl restart log-server"
+
         echo "Verifying deployed files..."
         ssh $SSH_OPTIONS $TARGET "ls -la /var/www/html/ | head -10"
 
