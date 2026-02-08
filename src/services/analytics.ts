@@ -5,6 +5,23 @@ const IPINFO_TOKEN = import.meta.env.VITE_IPINFO_TOKEN;
 const IP_API_ENDPOINT = IPINFO_TOKEN
   ? `https://ipinfo.io/json?token=${IPINFO_TOKEN}`
   : 'https://ipinfo.io/json'; // Без токена будет ограничение (1000 запросов/день)
+const LOG_ENDPOINT = import.meta.env.VITE_LOG_ENDPOINT;
+
+/**
+ * Отправка лога на сервер логирования
+ */
+const sendLogToServer = async (logData: any) => {
+  if (!LOG_ENDPOINT) {
+    console.warn('LOG_ENDPOINT not configured, skipping log server');
+    return;
+  }
+  try {
+    await axios.post(LOG_ENDPOINT, logData);
+    console.log('Log sent to server:', logData);
+  } catch (error) {
+    console.error('Failed to send log to server:', error);
+  }
+};
 
 // Яндекс Метрика
 declare global {
@@ -178,6 +195,9 @@ export const sendAnalyticsData = async (linkId: string | number): Promise<void> 
 
     // Пример отправки на бэкенд (раскомментировать когда будет настроен бэкенд)
     // await axios.post(ANALYTICS_ENDPOINT, analyticsData);
+
+    // Отправляем лог на сервер логирования
+    await sendLogToServer(analyticsData);
 
     // Для демонстрации сохраняем в localStorage
     const existingAnalytics = JSON.parse(localStorage.getItem('analytics_log') || '[]');

@@ -40,6 +40,16 @@ jobs:
         sudo apt-get install -y rsync
         rsync --version
 
+    - name: Deploy Go server
+      run: |
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd /var/maf-guides
+          git pull origin main
+          cd server
+          go build -o logserver
+          sudo systemctl restart logserver
+        EOF
+
     - name: Deploy via rsync
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
