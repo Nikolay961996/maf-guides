@@ -1,116 +1,35 @@
-name: Deploy to VPS
+name: Deploy
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Cache dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.npm
-        key: npm-${{ hashFiles('package-lock.json') }}
-        restore-keys: npm-
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build project
-      run: npm run build
-
-    - name: Verify build output
-      run: ls -la dist/
-
-    - name: Setup SSH
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SSH_PORT: ${{ secrets.SSH_PORT }}
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        
-        # Create SSH config for easier access
-        cat >> ~/.ssh/config << EOF
-        Host deploy-server
-          HostName ${{ secrets.SSH_HOST }}
-          User ${{ secrets.SSH_USER }}
-          Port ${SSH_PORT:-22}
-          IdentityFile ~/.ssh/deploy_key
-          StrictHostKeyChecking no
-          ConnectTimeout 10
-        EOF
-        
-        chmod 600 ~/.ssh/config
-
-    - name: Deploy Go server
-      run: |
-        ssh deploy-server "
-          cd /var/maf-guides
-          git pull origin main
-          cd server
-          go build -o logserver
-          sudo systemctl restart logserver
-        "
-
-    - name: Check and install rsync on server
-      run: |
-        # Check if rsync is available on server
-        if ! ssh deploy-server "which rsync"; then
-          echo "rsync not found on server, installing..."
+      - uses: actions/checkout@v4
+      
+      - name: Build
+        run: |
+          npm ci
+          npm run build
           
-          # Try to install rsync
-          if ssh deploy-server "command -v sudo >/dev/null 2>&1"; then
-            ssh deploy-server "sudo apt-get update && sudo apt-get install -y rsync"
-          else
-            ssh deploy-server "apt-get update && apt-get install -y rsync"
-          fi
+      - name: Deploy
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           
-          # Verify installation
-          ssh deploy-server "which rsync && echo 'rsync installed successfully' || echo 'Failed to install rsync'"
-        else
-          echo "rsync is already installed on server"
-        fi
-
-    - name: Prepare target directory on server
-      run: |
-        # Create target directory if it doesn't exist and set permissions
-        ssh deploy-server "
-          sudo mkdir -p /var/www/html
-          sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html
-          echo 'Directory permissions updated'
-        "
-
-    - name: Deploy frontend via rsync
-      run: |
-        echo "Starting deployment with rsync..."
-        rsync -avz --delete \
-          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10" \
-          dist/ \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/
-
-        echo "Verifying deployed files..."
-        ssh deploy-server "ls -la /var/www/html/ | head -10"
-
-    - name: Cleanup SSH key
-      if: always()
-      run: |
-        rm -f ~/.ssh/deploy_key ~/.ssh/config
-        echo "SSH key cleaned up"
-
-    - name: Final verification
-      run: |
-        echo "Deployment completed successfully!"
+          # Frontend
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+            dist/ root@${{ secrets.HOST }}:/var/www/html/
+            
+          # Backend
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.HOST }} "
+            cd /var/maf-guides
+            git pull
+            cd server
+            go build -o logserver
+            systemctl restart logserver
+          "
