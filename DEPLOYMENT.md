@@ -81,65 +81,6 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-### 3. Logging Server Setup
-
-The application includes a Node.js logging server that captures browser console logs and makes them available at `/logs`.
-
-**Install Node.js dependencies on the server:**
-```bash
-ssh user@45.135.233.197 "cd /var/www/html && npm install --production"
-```
-
-**Set up systemd service:**
-```bash
-# Copy systemd service file
-sudo cp /var/www/html/server/log-server.service /etc/systemd/system/
-
-# Reload systemd
-sudo systemctl daemon-reload
-
-# Enable and start the service
-sudo systemctl enable log-server
-sudo systemctl start log-server
-
-# Check status
-sudo systemctl status log-server
-```
-
-**Update Nginx configuration** to proxy requests to the logging server. Modify your Nginx site configuration (`/etc/nginx/sites-available/your-site`) to include:
-
-```nginx
-location /api/log {
-    proxy_pass http://localhost:3001;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
-
-location /logs {
-    proxy_pass http://localhost:3001;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
-
-location /health {
-    proxy_pass http://localhost:3001;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-}
-```
-
-Then restart Nginx:
-```bash
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-**Verify the logging server is working:**
-```bash
-curl http://localhost:3001/health
-curl http://localhost:3001/logs
-```
-
 ## How It Works
 
 1. When you push to `main` or `master` branch, GitHub Actions triggers the workflow
