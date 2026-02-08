@@ -20,9 +20,9 @@ export interface Guide {
 const mockGuides: Guide[] = [
   {
     id: 1,
-    title: 'Основы выживания в Tiles Survive!',
-    description: 'Узнайте, как пережить первые дни в игре, собирать ресурсы и строить убежище. Этот гайд поможет новичкам освоиться в мире Tiles Survive!',
-    imageUrl: '/images/guide1.svg',
+    title: 'Dominika стала губернатором!',
+    description: 'Договоренность по очереди сменять аркадию. Но есть риск, что kus не поможет защититься от других штатов или будут другие игроки кто не захочет делиться с аркадией.',
+    imageUrl: '/images/guide1.png',
     category: 'Выживание',
     difficulty: 'Легко',
     readTime: '5 мин',
@@ -30,8 +30,8 @@ const mockGuides: Guide[] = [
   {
     id: 2,
     title: 'Секретные локации и артефакты',
-    description: 'Откройте для себя скрытые локации, которые содержат мощные артефакты и редкие ресурсы. Полное руководство по исследованию карты.',
-    imageUrl: '/images/guide2.svg',
+    description: 'На карте поселения некоторые объекты интерактивны. При нажатии можно получить очки',
+    imageUrl: '/images/guide2.png',
     category: 'Исследование',
     difficulty: 'Средне',
     readTime: '12 мин',
@@ -39,8 +39,8 @@ const mockGuides: Guide[] = [
   {
     id: 3,
     title: 'Боевая система и PvP тактики',
-    description: 'Мастер-класс по боевой системе: эффективные комбо, уклонения и тактики для победы в PvP-столкновениях.',
-    imageUrl: '/images/guide3.svg',
+    description: 'Не атаковать поселения, которые вы заведомо не сможете одолеть. Иначе ваши потери будут выше',
+    imageUrl: '/images/guide3.png',
     category: 'Бой',
     difficulty: 'Сложно',
     readTime: '18 мин',
@@ -49,7 +49,7 @@ const mockGuides: Guide[] = [
     id: 4,
     title: 'Крафтинг и улучшение предметов',
     description: 'Полный рецептурный справочник по крафтингу. Узнайте, как создавать лучшие инструменты, оружие и броню.',
-    imageUrl: '/images/guide4.svg',
+    imageUrl: '/images/guide4.png',
     category: 'Крафтинг',
     difficulty: 'Средне',
     readTime: '10 мин',
@@ -57,8 +57,8 @@ const mockGuides: Guide[] = [
   {
     id: 5,
     title: 'Экономика и торговля с NPC',
-    description: 'Как заработать максимальное количество внутриигровой валюты. Стратегии торговли и выгодные сделки с NPC.',
-    imageUrl: '/images/guide5.svg',
+    description: 'Около поселения стоит заяц для перековки',
+    imageUrl: '/images/guide5.png',
     category: 'Экономика',
     difficulty: 'Легко',
     readTime: '8 мин',
@@ -66,8 +66,8 @@ const mockGuides: Guide[] = [
   {
     id: 6,
     title: 'Секретные достижения и трофеи',
-    description: 'Руководство по получению всех скрытых достижений и трофеев. Повысьте свой игровой статус до максимального уровня.',
-    imageUrl: '/images/guide6.svg',
+    description: 'Как фармить бесконечные ресурсы - обращаться к Лидеру чтобы рассказал',
+    imageUrl: '/images/guide6.png',
     category: 'Достижения',
     difficulty: 'Сложно',
     readTime: '15 мин',
@@ -148,13 +148,7 @@ const MainPage: React.FC = () => {
               <h1 className="text-3xl md:text-4xl font-bold font-heading bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
                 Tiles Survive! Guides
               </h1>
-              <p className="text-gray-300 mt-2">Лучшие гайды и советы по игре от сообщества</p>
-              {id && (
-                <div className="mt-2 inline-block px-3 py-1 bg-gray-800 rounded-full text-sm">
-                  <span className="text-gray-300">ID ссылки: </span>
-                  <span className="font-mono text-cyan-300">{id}</span>
-                </div>
-              )}
+              <p className="text-gray-300 mt-2">Лучшие гайды и советы по игре от MAF</p>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -189,31 +183,9 @@ const MainPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Статистика */}
-        <div className="mb-8 p-6 bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700">
-          <h2 className="text-2xl font-bold font-heading mb-4">📊 Статистика посещений</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-800/50 p-4 rounded-xl">
-              <div className="text-gray-300 text-sm">ID ссылки</div>
-              <div className="text-2xl font-bold text-cyan-300">{id || 'Не указан'}</div>
-            </div>
-            <div className="bg-gray-800/50 p-4 rounded-xl">
-              <div className="text-gray-300 text-sm">Всего гайдов</div>
-              <div className="text-2xl font-bold text-purple-300">{mockGuides.length}</div>
-            </div>
-            <div className="bg-gray-800/50 p-4 rounded-xl">
-              <div className="text-gray-300 text-sm">Найдено гайдов</div>
-              <div className="text-2xl font-bold text-green-300">{filteredGuides.length}</div>
-            </div>
-          </div>
-          <p className="text-gray-400 text-sm mt-4">
-            *Аналитика по посещениям собирается автоматически (IP, страна, время захода)
-          </p>
-        </div>
-
         {/* Сетка гайдов */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold font-heading mb-6">🎮 Гайды по Tiles Survive!</h2>
+          <h2 className="text-3xl font-bold font-heading mb-6">Последние новости от KuS!</h2>
           {filteredGuides.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {filteredGuides.map((guide, index) => (
@@ -275,7 +247,7 @@ const MainPage: React.FC = () => {
               <p className="text-gray-300">Неофициальный фанатский сайт с гайдами</p>
             </div>
             <div className="text-gray-300 text-sm">
-              <p>Все материалы собраны сообществом. Мы не связаны с разработчиками игры.</p>
+              <p>Все материалы собраны сообществом MAF. Мы не связаны с разработчиками игры.</p>
               <p className="mt-2">Аналитика собирается анонимно для статистики посещений.</p>
             </div>
           </div>
