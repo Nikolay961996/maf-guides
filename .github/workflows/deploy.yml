@@ -13,6 +13,16 @@ jobs:
       - name: Build
         run: |
           npm ci
+
+          # Create production environment file
+          echo "VITE_LOG_ENDPOINT=http://${{ secrets.SSH_HOST }}/api/log" > .env.production
+          echo "VITE_APP_ENV=production" >> .env.production
+
+          # Copy IPINFO_TOKEN from secrets if available
+          if [ -n "${{ secrets.IPINFO_TOKEN }}" ]; then
+            echo "VITE_IPINFO_TOKEN=${{ secrets.IPINFO_TOKEN }}" >> .env.production
+          fi
+
           npm run build
           
       - name: Deploy
@@ -29,11 +39,54 @@ jobs:
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
             dist/ root@$SSH_HOST:/var/www/html/
             
-          # Backend
+          # Backend - Copy server files
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+            server/ root@$SSH_HOST:/var/maf-guides/server/
+
+          # Backend - Build and restart
           ssh -o StrictHostKeyChecking=no root@$SSH_HOST "
-            cd /var/maf-guides
-            git pull
-            cd server
+            # Ensure directory exists
+            mkdir -p /var/maf-guides/server
+
+            # Check if Go is installed
+            if ! command -v go &> /dev/null; then
+              echo 'Go is not installed. Installing...'
+              apt-get update
+              apt-get install -y golang
+            fi
+
+            # Build Go server
+            cd /var/maf-guides/server
             go build -o logserver
+            chmod +x logserver
+
+            # Check if systemd service exists, create if not
+            if [ ! -f /etc/systemd/system/logserver.service ]; then
+              echo 'Creating systemd service...'
+              cat > /tmp/logserver.service << 'EOF'
+[Unit]
+Description=Log Server for Maf Guides
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/var/maf-guides/server
+ExecStart=/var/maf-guides/server/logserver
+Restart=always
+RestartSec=10
+Environment=PORT=3002
+
+[Install]
+WantedBy=multi-user.target
+EOF
+              mv /tmp/logserver.service /etc/systemd/system/logserver.service
+              systemctl daemon-reload
+              systemctl enable logserver
+            fi
+
+            # Restart service
             systemctl restart logserver
+            systemctl status logserver
           "
