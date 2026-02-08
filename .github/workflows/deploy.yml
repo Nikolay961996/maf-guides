@@ -63,24 +63,22 @@ jobs:
             # Check if systemd service exists, create if not
             if [ ! -f /etc/systemd/system/logserver.service ]; then
               echo 'Creating systemd service...'
-              cat > /tmp/logserver.service << 'EOF'
-[Unit]
-Description=Log Server for Maf Guides
-After=network.target
-
-[Service]
-Type=simple
-User=root
-Group=root
-WorkingDirectory=/var/maf-guides/server
-ExecStart=/var/maf-guides/server/logserver
-Restart=always
-RestartSec=10
-Environment=PORT=3002
-
-[Install]
-WantedBy=multi-user.target
-EOF
+              echo '[Unit]' > /tmp/logserver.service
+              echo 'Description=Log Server for Maf Guides' >> /tmp/logserver.service
+              echo 'After=network.target' >> /tmp/logserver.service
+              echo '' >> /tmp/logserver.service
+              echo '[Service]' >> /tmp/logserver.service
+              echo 'Type=simple' >> /tmp/logserver.service
+              echo 'User=root' >> /tmp/logserver.service
+              echo 'Group=root' >> /tmp/logserver.service
+              echo 'WorkingDirectory=/var/maf-guides/server' >> /tmp/logserver.service
+              echo 'ExecStart=/var/maf-guides/server/logserver' >> /tmp/logserver.service
+              echo 'Restart=always' >> /tmp/logserver.service
+              echo 'RestartSec=10' >> /tmp/logserver.service
+              echo 'Environment=PORT=3002' >> /tmp/logserver.service
+              echo '' >> /tmp/logserver.service
+              echo '[Install]' >> /tmp/logserver.service
+              echo 'WantedBy=multi-user.target' >> /tmp/logserver.service
               mv /tmp/logserver.service /etc/systemd/system/logserver.service
               systemctl daemon-reload
               systemctl enable logserver
