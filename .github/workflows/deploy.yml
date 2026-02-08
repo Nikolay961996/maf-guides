@@ -34,13 +34,7 @@ jobs:
     - name: Verify build output
       run: ls -la dist/
 
-    - name: Install rsync
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y rsync
-        rsync --version
-
-    - name: Setup SSH for all steps
+    - name: Setup SSH
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SSH_PORT: ${{ secrets.SSH_PORT }}
@@ -49,7 +43,7 @@ jobs:
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
         
-        # Create SSH config
+        # Create SSH config for easier access
         cat >> ~/.ssh/config << EOF
         Host deploy-server
           HostName ${{ secrets.SSH_HOST }}
@@ -63,15 +57,14 @@ jobs:
         chmod 600 ~/.ssh/config
 
     - name: Deploy Go server
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        cd /var/maf-guides
-        git pull origin main
-        cd server
-        go build -o logserver
-        sudo systemctl restart logserver
-      shell: ssh deploy-server bash -e {0}
+        ssh deploy-server "
+          cd /var/maf-guides
+          git pull origin main
+          cd server
+          go build -o logserver
+          sudo systemctl restart logserver
+        "
 
     - name: Check and install rsync on server
       run: |
@@ -94,8 +87,12 @@ jobs:
 
     - name: Prepare target directory on server
       run: |
-        # Create target directory if it doesn't exist
-        ssh deploy-server "sudo mkdir -p /var/www/html && sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html"
+        # Create target directory if it doesn't exist and set permissions
+        ssh deploy-server "
+          sudo mkdir -p /var/www/html
+          sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html
+          echo 'Directory permissions updated'
+        "
 
     - name: Deploy frontend via rsync
       run: |
