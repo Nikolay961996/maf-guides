@@ -40,17 +40,7 @@ jobs:
         sudo apt-get install -y rsync
         rsync --version
 
-    - name: Deploy Go server
-      run: |
-        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          cd /var/maf-guides
-          git pull origin main
-          cd server
-          go build -o logserver
-          sudo systemctl restart logserver
-        EOF
-
-    - name: Deploy via rsync
+    - name: Setup SSH for all steps
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         SSH_PORT: ${{ secrets.SSH_PORT }}
@@ -58,47 +48,72 @@ jobs:
         mkdir -p ~/.ssh
         echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
+        
+        # Create SSH config
+        cat >> ~/.ssh/config << EOF
+        Host deploy-server
+          HostName ${{ secrets.SSH_HOST }}
+          User ${{ secrets.SSH_USER }}
+          Port ${SSH_PORT:-22}
+          IdentityFile ~/.ssh/deploy_key
+          StrictHostKeyChecking no
+          ConnectTimeout 10
+        EOF
+        
+        chmod 600 ~/.ssh/config
 
-        PORT=${SSH_PORT:-22}
-        SSH_OPTIONS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -p $PORT -i ~/.ssh/deploy_key"
-        TARGET="${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}"
+    - name: Deploy Go server
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        cd /var/maf-guides
+        git pull origin main
+        cd server
+        go build -o logserver
+        sudo systemctl restart logserver
+      shell: ssh deploy-server bash -e {0}
 
-        echo "Testing SSH connection..."
-        ssh $SSH_OPTIONS $TARGET "echo 'SSH connection successful'"
-
-        echo "Checking if rsync is available on server..."
-        if ! ssh $SSH_OPTIONS $TARGET "which rsync"; then
+    - name: Check and install rsync on server
+      run: |
+        # Check if rsync is available on server
+        if ! ssh deploy-server "which rsync"; then
           echo "rsync not found on server, installing..."
-
-          # Check if sudo is available
-          if ssh $SSH_OPTIONS $TARGET "which sudo"; then
-            echo "Using sudo for package installation..."
-            ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y rsync"
+          
+          # Try to install rsync
+          if ssh deploy-server "command -v sudo >/dev/null 2>&1"; then
+            ssh deploy-server "sudo apt-get update && sudo apt-get install -y rsync"
           else
-            echo "sudo not found, trying apt-get without sudo (assuming root)..."
-            ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y rsync"
+            ssh deploy-server "apt-get update && apt-get install -y rsync"
           fi
-
-          # Verify rsync was installed
-          if ssh $SSH_OPTIONS $TARGET "which rsync"; then
-            echo "rsync installed successfully"
-            ssh $SSH_OPTIONS $TARGET "rsync --version | head -1"
-          else
-            echo "ERROR: Failed to install rsync"
-            exit 1
-          fi
+          
+          # Verify installation
+          ssh deploy-server "which rsync && echo 'rsync installed successfully' || echo 'Failed to install rsync'"
         else
           echo "rsync is already installed on server"
         fi
 
-        echo "Checking target directory permissions..."
-        ssh $SSH_OPTIONS $TARGET "ls -ld /var/www/html || echo 'Directory does not exist'"
+    - name: Prepare target directory on server
+      run: |
+        # Create target directory if it doesn't exist
+        ssh deploy-server "sudo mkdir -p /var/www/html && sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html"
 
+    - name: Deploy frontend via rsync
+      run: |
         echo "Starting deployment with rsync..."
-        rsync -avz --delete -e "ssh $SSH_OPTIONS" dist/ $TARGET:/var/www/html/
+        rsync -avz --delete \
+          -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10" \
+          dist/ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/
 
         echo "Verifying deployed files..."
-        ssh $SSH_OPTIONS $TARGET "ls -la /var/www/html/ | head -10"
+        ssh deploy-server "ls -la /var/www/html/ | head -10"
 
-        rm -f ~/.ssh/deploy_key
+    - name: Cleanup SSH key
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key ~/.ssh/config
+        echo "SSH key cleaned up"
+
+    - name: Final verification
+      run: |
         echo "Deployment completed successfully!"
