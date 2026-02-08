@@ -81,6 +81,7 @@ jobs:
               echo 'Restart=always' >> /tmp/logserver.service
               echo 'RestartSec=10' >> /tmp/logserver.service
               echo 'Environment=PORT=3002' >> /tmp/logserver.service
+              echo 'Environment=IPINFO_TOKEN=36682665571ba2' >> /tmp/logserver.service
               echo '' >> /tmp/logserver.service
               echo '[Install]' >> /tmp/logserver.service
               echo 'WantedBy=multi-user.target' >> /tmp/logserver.service
