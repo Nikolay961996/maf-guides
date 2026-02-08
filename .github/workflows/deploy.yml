@@ -83,19 +83,15 @@ jobs:
 
         echo "Checking if Node.js/npm is available on server..."
         if ! ssh $SSH_OPTIONS $TARGET "which npm"; then
-          echo "npm not found on server, installing Node.js 20.x via nodesource..."
+          echo "npm not found on server, installing Node.js and npm..."
 
           # Check if sudo is available
           if ssh $SSH_OPTIONS $TARGET "which sudo"; then
             echo "Using sudo for package installation..."
-            ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y curl"
-            ssh $SSH_OPTIONS $TARGET "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
-            ssh $SSH_OPTIONS $TARGET "sudo apt-get install -y nodejs"
+            ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y nodejs npm"
           else
-            echo "sudo not found, assuming root..."
-            ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y curl"
-            ssh $SSH_OPTIONS $TARGET "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-            ssh $SSH_OPTIONS $TARGET "apt-get install -y nodejs"
+            echo "sudo not found, trying apt-get without sudo (assuming root)..."
+            ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y nodejs npm"
           fi
 
           # Verify npm was installed
@@ -111,27 +107,6 @@ jobs:
           echo "npm is already installed on server"
           ssh $SSH_OPTIONS $TARGET "npm --version"
           ssh $SSH_OPTIONS $TARGET "node --version"
-
-          # Check if Node.js version is >=18
-          NODE_VERSION=$(ssh $SSH_OPTIONS $TARGET "node --version | cut -d'v' -f2")
-          NODE_MAJOR=$(echo $NODE_VERSION | cut -d'.' -f1)
-          if [ $NODE_MAJOR -lt 18 ]; then
-            echo "Node.js version $NODE_VERSION is too old, updating to 20.x..."
-            if ssh $SSH_OPTIONS $TARGET "which sudo"; then
-              ssh $SSH_OPTIONS $TARGET "sudo apt-get remove -y nodejs"
-              ssh $SSH_OPTIONS $TARGET "sudo apt-get update && sudo apt-get install -y curl"
-              ssh $SSH_OPTIONS $TARGET "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
-              ssh $SSH_OPTIONS $TARGET "sudo apt-get install -y nodejs"
-            else
-              ssh $SSH_OPTIONS $TARGET "apt-get remove -y nodejs"
-              ssh $SSH_OPTIONS $TARGET "apt-get update && apt-get install -y curl"
-              ssh $SSH_OPTIONS $TARGET "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-              ssh $SSH_OPTIONS $TARGET "apt-get install -y nodejs"
-            fi
-            echo "Node.js updated:"
-            ssh $SSH_OPTIONS $TARGET "node --version"
-            ssh $SSH_OPTIONS $TARGET "npm --version"
-          fi
         fi
 
         echo "Checking target directory permissions..."
@@ -150,21 +125,12 @@ jobs:
           ./ $TARGET:/var/www/html/
 
         echo "Installing server dependencies..."
-        ssh $SSH_OPTIONS $TARGET "cd /var/www/html && npm cache clean --force && npm install --production"
+        ssh $SSH_OPTIONS $TARGET "cd /var/www/html && npm install --production"
 
         echo "Setting up systemd service..."
-        # Check if sudo is available for systemd commands
-        if ssh $SSH_OPTIONS $TARGET "which sudo"; then
-          echo "Using sudo for systemd commands..."
-          ssh $SSH_OPTIONS $TARGET "sudo cp /var/www/html/server/log-server.service /etc/systemd/system/ 2>/dev/null || echo 'Service file copied'"
-          ssh $SSH_OPTIONS $TARGET "sudo systemctl daemon-reload"
-          ssh $SSH_OPTIONS $TARGET "sudo systemctl enable log-server --now 2>/dev/null || sudo systemctl restart log-server"
-        else
-          echo "No sudo available, trying without sudo (assuming root)..."
-          ssh $SSH_OPTIONS $TARGET "cp /var/www/html/server/log-server.service /etc/systemd/system/ 2>/dev/null || echo 'Service file copied'"
-          ssh $SSH_OPTIONS $TARGET "systemctl daemon-reload"
-          ssh $SSH_OPTIONS $TARGET "systemctl enable log-server --now 2>/dev/null || systemctl restart log-server"
-        fi
+        ssh $SSH_OPTIONS $TARGET "sudo cp /var/www/html/server/log-server.service /etc/systemd/system/ 2>/dev/null || echo 'Service file copied'"
+        ssh $SSH_OPTIONS $TARGET "sudo systemctl daemon-reload"
+        ssh $SSH_OPTIONS $TARGET "sudo systemctl enable log-server --now 2>/dev/null || sudo systemctl restart log-server"
 
         echo "Verifying deployed files..."
         ssh $SSH_OPTIONS $TARGET "ls -la /var/www/html/ | head -10"
