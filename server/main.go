@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -23,6 +25,16 @@ type LogEntry struct {
 	Referrer    string `json:"referrer,omitempty"`
 	Screen      string `json:"screenResolution,omitempty"`
 	Language    string `json:"language,omitempty"`
+}
+
+// GeoInfo представляет информацию о геолокации от ipinfo.io
+type GeoInfo struct {
+	IP       string `json:"ip"`
+	City     string `json:"city"`
+	Region   string `json:"region"`
+	Country  string `json:"country"`
+	Timezone string `json:"timezone"`
+	Loc      string `json:"loc"`
 }
 
 var (
@@ -48,6 +60,69 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// getClientIP извлекает реальный IP клиента из запроса
+func getClientIP(r *http.Request) string {
+	// Проверяем X-Forwarded-For (список IP через запятую)
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		// Берем первый IP из списка
+		ips := strings.Split(forwarded, ",")
+		if len(ips) > 0 {
+			return strings.TrimSpace(ips[0])
+		}
+	}
+
+	// Проверяем X-Real-IP
+	realIP := r.Header.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
+	}
+
+	// Используем RemoteAddr (может содержать порт)
+	remoteAddr := r.RemoteAddr
+	if remoteAddr != "" {
+		// Убираем порт, если есть
+		if idx := strings.LastIndex(remoteAddr, ":"); idx != -1 {
+			return remoteAddr[:idx]
+		}
+		return remoteAddr
+	}
+
+	return "unknown"
+}
+
+// getGeoFromIP запрашивает геолокацию по IP у ipinfo.io
+func getGeoFromIP(ip string) (GeoInfo, error) {
+	token := getEnv("IPINFO_TOKEN", "")
+	url := "https://ipinfo.io/" + ip + "/json"
+	if token != "" {
+		url = url + "?token=" + token
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return GeoInfo{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return GeoInfo{}, fmt.Errorf("ipinfo.io returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return GeoInfo{}, err
+	}
+
+	var geoInfo GeoInfo
+	if err := json.Unmarshal(body, &geoInfo); err != nil {
+		return GeoInfo{}, err
+	}
+
+	return geoInfo, nil
 }
 
 // handleLog принимает POST запрос с JSON логом и сохраняет в файл
@@ -76,6 +151,34 @@ func handleLog(w http.ResponseWriter, r *http.Request) {
 	// Добавляем timestamp, если отсутствует
 	if entry.Timestamp == "" {
 		entry.Timestamp = time.Now().UTC().Format(time.RFC3339)
+	}
+
+	// Получаем реальный IP клиента
+	clientIP := getClientIP(r)
+	if clientIP != "unknown" {
+		entry.IPAddress = clientIP
+	}
+
+	// Если IP определен и geo-данные отсутствуют или unknown, получаем геолокацию
+	if entry.IPAddress != "" && entry.IPAddress != "unknown" {
+		geoInfo, err := getGeoFromIP(entry.IPAddress)
+		if err == nil {
+			// Обновляем геолокационные поля, если они пустые или unknown
+			if entry.Country == "" || entry.Country == "unknown" {
+				entry.Country = geoInfo.Country
+			}
+			if entry.CountryCode == "" || entry.CountryCode == "unknown" {
+				entry.CountryCode = geoInfo.Country
+			}
+			if entry.Region == "" || entry.Region == "unknown" {
+				entry.Region = geoInfo.Region
+			}
+			if entry.City == "" || entry.City == "unknown" {
+				entry.City = geoInfo.City
+			}
+		} else {
+			log.Printf("Failed to get geo info for IP %s: %v", entry.IPAddress, err)
+		}
 	}
 
 	// Сохраняем лог
