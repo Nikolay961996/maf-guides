@@ -15,7 +15,12 @@ jobs:
           npm ci
 
           # Create production environment file
-          echo "VITE_LOG_ENDPOINT=http://${{ secrets.SSH_HOST }}/api/log" > .env.production
+          # Use domain if provided, otherwise use SSH_HOST
+          if [ -n "${{ secrets.DOMAIN }}" ]; then
+            echo "VITE_LOG_ENDPOINT=https://${{ secrets.DOMAIN }}/api/log" > .env.production
+          else
+            echo "VITE_LOG_ENDPOINT=http://${{ secrets.SSH_HOST }}/api/log" > .env.production
+          fi
           echo "VITE_APP_ENV=production" >> .env.production
 
           # Copy IPINFO_TOKEN from secrets if available
