@@ -74,8 +74,8 @@ jobs:
               echo '' >> /tmp/logserver.service
               echo '[Service]' >> /tmp/logserver.service
               echo 'Type=simple' >> /tmp/logserver.service
-              echo 'User=root' >> /tmp/logserver.service
-              echo 'Group=root' >> /tmp/logserver.service
+              echo 'User=www-data' >> /tmp/logserver.service
+              echo 'Group=www-data' >> /tmp/logserver.service
               echo 'WorkingDirectory=/var/maf-guides/server' >> /tmp/logserver.service
               echo 'ExecStart=/var/maf-guides/server/logserver' >> /tmp/logserver.service
               echo 'Restart=always' >> /tmp/logserver.service
