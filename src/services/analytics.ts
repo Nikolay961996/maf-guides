@@ -12,14 +12,14 @@ const LOG_ENDPOINT = import.meta.env.VITE_LOG_ENDPOINT;
  */
 const sendLogToServer = async (logData: any) => {
   if (!LOG_ENDPOINT) {
-    console.warn('LOG_ENDPOINT not configured, skipping log server');
+    //console.warn('LOG_ENDPOINT not configured, skipping log server');
     return;
   }
   try {
     await axios.post(LOG_ENDPOINT, logData);
-    console.log('Log sent to server:', logData);
+   // console.log('Log sent to server:', logData);
   } catch (error) {
-    console.error('Failed to send log to server:', error);
+    //console.error('Failed to send log to server:', error);
   }
 };
 
@@ -40,7 +40,7 @@ export const sendToYandexMetrika = (event: string, params?: Record<string, any>)
   try {
     window.ym(106551842, event, params);
   } catch (error) {
-    console.error('Failed to send event to Yandex Metrika:', error);
+    //console.error('Failed to send event to Yandex Metrika:', error);
   }
 };
 
@@ -52,7 +52,7 @@ export const sendToGoogleAnalytics = (event: string, params?: Record<string, any
   try {
     window.gtag('event', event, params);
   } catch (error) {
-    console.error('Failed to send event to Google Analytics:', error);
+    //console.error('Failed to send event to Google Analytics:', error);
   }
 };
 
@@ -75,7 +75,7 @@ export const sendAnalyticsEvent = (analyticsData: any) => {
   // Отправка в Google Analytics
   sendToGoogleAnalytics('analytics_data_collected', safeData);
 
-  console.log('Analytics event sent to Yandex Metrika and Google Analytics:', safeData);
+  //console.log('Analytics event sent to Yandex Metrika and Google Analytics:', safeData);
 };
 
 /**
@@ -85,7 +85,7 @@ export const sendFilterEvent = (category: string) => {
   const eventData = { category };
   sendToYandexMetrika('filter_category', eventData);
   sendToGoogleAnalytics('filter_category', eventData);
-  console.log('Filter event sent:', eventData);
+  //console.log('Filter event sent:', eventData);
 };
 
 /**
@@ -95,7 +95,7 @@ export const sendSearchEvent = (query: string, resultsCount: number) => {
   const eventData = { query, resultsCount };
   sendToYandexMetrika('search_query', eventData);
   sendToGoogleAnalytics('search_query', eventData);
-  console.log('Search event sent:', eventData);
+  //console.log('Search event sent:', eventData);
 };
 
 /**
@@ -105,7 +105,7 @@ export const sendCardViewEvent = (cardId: number, title: string, category: strin
   const eventData = { cardId, title, category };
   sendToYandexMetrika('view_card', eventData);
   sendToGoogleAnalytics('view_card', eventData);
-  console.log('Card view event sent:', eventData);
+  //console.log('Card view event sent:', eventData);
 };
 
 /**
@@ -115,7 +115,7 @@ export const sendCardClickEvent = (cardId: number, title: string, category: stri
   const eventData = { cardId, title, category };
   sendToYandexMetrika('click_card', eventData);
   sendToGoogleAnalytics('click_card', eventData);
-  console.log('Card click event sent:', eventData);
+  //console.log('Card click event sent:', eventData);
 };
 
 // Интерфейс данных аналитики
@@ -152,7 +152,7 @@ export const getLocationInfo = async (): Promise<{
       city: response.data.city || 'unknown',
     };
   } catch (error) {
-    console.error('Failed to fetch location info:', error);
+    //console.error('Failed to fetch location info:', error);
     // Возвращаем значения по умолчанию в случае ошибки
     return {
       ip: 'unknown',
@@ -191,7 +191,7 @@ export const sendAnalyticsData = async (linkId: string | number): Promise<void> 
     const analyticsData = await collectAnalyticsData(linkId);
 
     // В реальном приложении здесь будет отправка на ваш бэкенд
-    console.log('Analytics data collected:', analyticsData);
+    //console.log('Analytics data collected:', analyticsData);
 
     // Пример отправки на бэкенд (раскомментировать когда будет настроен бэкенд)
     // await axios.post(ANALYTICS_ENDPOINT, analyticsData);
@@ -208,7 +208,7 @@ export const sendAnalyticsData = async (linkId: string | number): Promise<void> 
     sendAnalyticsEvent(analyticsData);
 
   } catch (error) {
-    console.error('Failed to send analytics data:', error);
+    //console.error('Failed to send analytics data:', error);
   }
 };
 
@@ -218,7 +218,7 @@ export const getAnalyticsStats = () => {
     const analyticsLog = JSON.parse(localStorage.getItem('analytics_log') || '[]');
     return analyticsLog;
   } catch (error) {
-    console.error('Failed to get analytics stats:', error);
+    //console.error('Failed to get analytics stats:', error);
     return [];
   }
 };
